@@ -2,17 +2,22 @@ name: Trigger CircleCI workflow
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+    types: [opened, synchronize, reopened, converted_to_draft, ready_for_review]
+  push:
+    branches:
+      - next
+
 jobs:
   trigger-ci-tests:
     runs-on: ubuntu-latest
     if: github.event.pull_request.draft == true
     steps:
+      - uses: hmarr/debug-action@v2
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
           node-version: 16
-      - name: Trigger PR tests
+      - name: Trigger draft PR tests
         run: >
           npx trigger-circleci-pipeline --org storybookjs --project storybook \
             --branch "${{ github.event.pull_request.head.ref }}" \
@@ -21,8 +26,9 @@ jobs:
           CIRCLE_CI_API_TOKEN: ${{ secrets.CIRCLE_CI_TOKEN }}
   trigger-pr-tests:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.draft == false || github.event.label.name == 'pr-tests'
+    if: github.event.pull_request.draft == false || contains(github.event.pull_request.labels.*.name, 'ci:pr')
     steps:
+      - uses: hmarr/debug-action@v2
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
@@ -32,5 +38,37 @@ jobs:
           npx trigger-circleci-pipeline --org storybookjs --project storybook \
             --branch "${{ github.event.pull_request.head.ref }}" \
             --parameters workflow=pr
+        env:
+          CIRCLE_CI_API_TOKEN: ${{ secrets.CIRCLE_CI_TOKEN }}
+  trigger-merged-tests:
+    runs-on: ubuntu-latest
+    if: env.branch == 'next' || contains(github.event.pull_request.labels.*.name, 'ci:merged')
+    steps:
+      - uses: hmarr/debug-action@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - name: Trigger merged tests
+        run: >
+          npx trigger-circleci-pipeline --org storybookjs --project storybook \
+            --branch "${{ github.event.pull_request.head.ref }}" \
+            --parameters workflow=merged
+        env:
+          CIRCLE_CI_API_TOKEN: ${{ secrets.CIRCLE_CI_TOKEN }}
+  trigger-daily-tests:
+    runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.labels.*.name, 'ci:daily')
+    steps:
+      - uses: hmarr/debug-action@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - name: Trigger the daily tests
+        run: >
+          npx trigger-circleci-pipeline --org storybookjs --project storybook \
+            --branch "${{ github.event.pull_request.head.ref }}" \
+            --parameters workflow=daily
         env:
           CIRCLE_CI_API_TOKEN: ${{ secrets.CIRCLE_CI_TOKEN }}
