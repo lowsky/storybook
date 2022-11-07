@@ -5,8 +5,18 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
 
 jobs:
+  trigger-ci-tests:
+    if: github.event.pull_request.draft == true
+    steps:
+      - name: Trigger PR tests
+        run: >
+          npx trigger-circleci-pipeline --org storybookjs --project storybook \
+            --branch "${{ github.event.pull_request.head.ref }}" \
+            --parameters workflow=ci
+        env:
+          CIRCLE_CI_API_TOKEN: ${{ secrets.CIRCLE_CI_TOKEN }}
   trigger-pr-tests:
-    if: github.event.pull_request.draft == false
+    if: github.event.pull_request.draft == false || github.event.label.name == 'pr-tests'
     steps:
       - name: Trigger PR tests
         run: >
