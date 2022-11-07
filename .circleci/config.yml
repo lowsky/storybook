@@ -5,7 +5,7 @@ parameters:
     description: Which workflow to run
     type: enum
     enum: ['ci', 'pr', 'merged', 'daily']
-    default: ''
+    default: 'ci'
 
 executors:
   sb_node_16_classic:
@@ -437,7 +437,9 @@ jobs:
 workflows:
   test:
     when:
-      equal: [ ci, << pipeline.parameters.workflow >> ]
+      and:
+        - equal: [ api, << pipeline.trigger_source >> ]
+        - equal:  [ ci, << pipeline.parameters.workflow >> ]
     jobs:
       - build
       - lint:
