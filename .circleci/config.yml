@@ -573,7 +573,7 @@ workflows:
           parallelism: 14
           requires:
             - build-sandboxes
-  daily-tests:
+  daily:
     when:
       equal: [ daily, << pipeline.parameters.workflow >> ]
     jobs:
