@@ -10,8 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' && github.event.pull_request.draft == true
     steps:
-      - uses: hmarr/debug-action@v2
-      - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
           node-version: 16
@@ -26,8 +24,6 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' && (github.event.pull_request.draft == false || contains(github.event.pull_request.labels.*.name, 'ci:pr'))
     steps:
-      - uses: hmarr/debug-action@v2
-      - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
           node-version: 16
@@ -42,15 +38,13 @@ jobs:
     runs-on: ubuntu-latest
     if: (github.event_name == 'push' && github.ref_name == 'kasper/debug-ci') || contains(github.event.pull_request.labels.*.name, 'ci:merged')
     steps:
-      - uses: hmarr/debug-action@v2
-      - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
           node-version: 16
       - name: Trigger merged tests
         run: >
           npx trigger-circleci-pipeline --org storybookjs --project storybook \
-            --branch "${{ github.event.pull_request.head.ref }}" \
+            --branch "${{ github.event.pull_request.head.ref || github.ref_name }}" \
             --parameters workflow=merged
         env:
           CIRCLE_CI_API_TOKEN: ${{ secrets.CIRCLE_CI_TOKEN }}
@@ -58,8 +52,6 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'ci:daily')
     steps:
-      - uses: hmarr/debug-action@v2
-      - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
           node-version: 16
